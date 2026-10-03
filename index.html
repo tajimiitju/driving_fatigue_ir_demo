@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy-Preserving Driver-State Sensing — Low-Resolution Infrared Array</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cold-navy: #0B1830;
+    --cold-navy-2: #132544;
+    --cold-blue: #2C5F8A;
+    --frost: #F3F6FA;
+    --paper: #FFFFFF;
+    --warm-ember: #D9672C;
+    --warm-gold: #F2A74B;
+    --ink: #1A2233;
+    --muted: #5B6B82;
+    --line: #DCE3EC;
+    --radius: 10px;
+    --maxw: 1080px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--frost);
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  h1, h2, h3, .display {
+    font-family: "Space Grotesk", "IBM Plex Sans", Arial, sans-serif;
+    font-weight: 600;
+    color: var(--cold-navy);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  code, .mono {
+    font-family: "IBM Plex Mono", "Consolas", monospace;
+  }
+  a { color: var(--cold-blue); }
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  p { max-width: 70ch; }
+  .section-head p { max-width: 62ch; }
+
+  /* ---------- NAV ---------- */
+  nav.topnav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 24, 48, 0.96);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  nav.topnav .wrap {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    overflow-x: auto;
+    padding-top: 0; padding-bottom: 0;
+    scrollbar-width: thin;
+  }
+  nav.topnav a {
+    display: block;
+    white-space: nowrap;
+    color: #C9D3EE;
+    text-decoration: none;
+    font-size: 13.5px;
+    padding: 14px 10px;
+    border-bottom: 2px solid transparent;
+  }
+  nav.topnav a:hover, nav.topnav a:focus-visible { color: #fff; border-bottom-color: var(--warm-ember); }
+  nav.topnav .brand {
+    color: #fff;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    padding-right: 12px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    margin-right: 4px;
+    flex: none;
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero {
+    position: relative;
+    background: var(--cold-navy);
+    color: #fff;
+    overflow: hidden;
+    padding: 72px 0 86px;
+  }
+  header.hero::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(circle at 24% 30%, rgba(217,103,44,0.55), transparent 42%),
+      radial-gradient(circle at 70% 60%, rgba(44,95,138,0.65), transparent 46%),
+      radial-gradient(circle at 85% 15%, rgba(242,167,75,0.35), transparent 38%);
+    filter: blur(40px);
+    animation: drift 22s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    from { transform: translate(-2%, -1%) scale(1); }
+    to   { transform: translate(2%, 3%) scale(1.08); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    header.hero::before { animation: none; }
+  }
+  header.hero .wrap { position: relative; z-index: 1; }
+  .eyebrow-badge {
+    display: inline-block;
+    font-size: 13px;
+    color: #C9D3EE;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  header.hero h1 {
+    color: #fff;
+    font-size: clamp(28px, 4.4vw, 46px);
+    max-width: 18ch;
+    margin: 0 0 18px;
+  }
+  header.hero .sub {
+    color: #D6DEEF;
+    font-size: 18px;
+    max-width: 60ch;
+    margin: 0 0 28px;
+  }
+  .byline { color: #AEBBD6; font-size: 15px; }
+  .byline strong { color: #fff; font-weight: 600; }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+  section.dark {
+    background: var(--cold-navy);
+    border-bottom: none;
+  }
+  section.dark h2, section.dark h3 { color: #fff; }
+  section.dark p { color: #C9D3EE; }
+  .section-head { margin-bottom: 36px; }
+  .step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--cold-navy);
+    color: #fff;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-right: 10px;
+    flex: none;
+  }
+  h2 { font-size: clamp(22px, 3vw, 30px); display: flex; align-items: center; }
+  h3 { font-size: 19px; margin: 0 0 10px; }
+
+  .cols-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+  .cols-2.reverse { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  .cols-2.reverse .figure-col { order: -1; }
+  @media (max-width: 760px) {
+    .cols-2, .cols-2.reverse { grid-template-columns: minmax(0, 1fr); }
+    .cols-2.reverse .figure-col { order: 0; }
+  }
+
+  /* ---------- MEDIA PLACEHOLDERS ---------- */
+  figure { margin: 0; }
+  .placeholder {
+    border: 1.5px dashed #A9B7CC;
+    background: #E8EDF4;
+    border-radius: var(--radius);
+    min-height: 200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--muted);
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .placeholder .ph-icon { font-size: 26px; opacity: 0.6; }
+  .placeholder .ph-name {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 3px 9px;
+    border-radius: 6px;
+    color: var(--cold-navy);
+  }
+  .placeholder .ph-label { font-size: 13px; }
+  figcaption {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  video.placeholder-video, img.real-media {
+    width: 100%;
+    border-radius: var(--radius);
+    display: block;
+    border: 1px solid var(--line);
+  }
+
+  /* ---------- STATS ---------- */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+    gap: 18px;
+    margin: 28px 0 8px;
+  }
+  .stat {
+    text-align: center;
+    padding: 16px 8px;
+  }
+  .stat .num {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(20px, 3.4vw, 32px);
+    font-weight: 600;
+    color: var(--warm-ember);
+    display: block;
+    white-space: nowrap;
+  }
+  section.dark .stat .num { color: var(--warm-gold); }
+  .stat .lbl { font-size: 13.5px; color: var(--muted); }
+  section.dark .stat .lbl { color: #AEBBD6; }
+
+  /* ---------- CODE / SCRIPT CARD ---------- */
+  .script-card {
+    background: var(--cold-navy);
+    color: #E8EDF4;
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin: 20px 0;
+  }
+  .script-card .fname {
+    font-family: "IBM Plex Mono", monospace;
+    color: #fff;
+    font-size: 14.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .script-card .fname::before { content: "\1F4C4"; font-size: 14px; }
+  .script-card p { color: #C9D3EE; font-size: 14.5px; margin: 0; max-width: none; }
+
+  /* ---------- CARDS / CHIPS ---------- */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+  .chip {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .chip b { color: var(--warm-ember); }
+
+  .callout {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--warm-ember);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 22px 0;
+    font-size: 15.5px;
+  }
+  .callout p { margin: 0; max-width: none; }
+
+  ul.plain { padding-left: 20px; margin: 14px 0; }
+  ul.plain li { margin-bottom: 8px; }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  footer {
+    background: var(--cold-navy);
+    color: #AEBBD6;
+    padding: 40px 0;
+    font-size: 14px;
+    text-align: center;
+  }
+  footer a { color: #fff; }
+
+  :focus-visible { outline: 2px solid var(--warm-ember); outline-offset: 2px; }
+
+  /* ---------- CAMERA VS SENSOR COMPARISON (pure HTML/CSS figure) ---------- */
+  .compare-fig {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin: 30px 0 10px;
+  }
+  @media (max-width: 600px) { .compare-fig { grid-template-columns: 1fr; } }
+  .compare-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+  .compare-card h4 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .cam-visual {
+    aspect-ratio: 1/1;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      repeating-linear-gradient(0deg, #cfd6e0 0 3px, #c3cbd8 3px 6px),
+      repeating-linear-gradient(90deg, #cfd6e0 0 3px, #c3cbd8 3px 6px);
+    background-blend-mode: multiply;
+  }
+  .cam-visual svg { width: 46%; height: 46%; opacity: 0.88; }
+  .therm-visual {
+    aspect-ratio: 1/1;
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+  }
+  .id-tag {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+  .id-tag.bad { background: #FBE6E0; color: #B8451F; }
+  .id-tag.good { background: #E3F0E6; color: #2F7A41; }
+
+  /* ---------- VNC BUTTON + PRIVACY NOTE ---------- */
+  .vnc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cold-navy);
+    color: #fff;
+    text-decoration: none;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 22px;
+    border-radius: 8px;
+    margin: 22px 0 10px;
+  }
+  .vnc-btn:hover { background: var(--cold-blue); }
+  .vnc-btn .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #3FC97F;
+    box-shadow: 0 0 0 0 rgba(63,201,127,0.6);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(63,201,127,0.55); }
+    70%  { box-shadow: 0 0 0 8px rgba(63,201,127,0); }
+    100% { box-shadow: 0 0 0 0 rgba(63,201,127,0); }
+  }
+  .vnc-caption { font-size: 14px; color: var(--muted); margin-top: 0; }
+  .monitor-note {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 28px;
+  }
+  .monitor-note .m-icon { font-size: 26px; flex: none; line-height: 1; }
+  .monitor-note p { margin: 0; max-width: none; font-size: 15.5px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav" aria-label="Section navigation">
+  <div class="wrap">
+    <span class="brand">Thermal Driver-State Sensing</span>
+    <a href="#why">Why</a>
+    <a href="#how">Hardware</a>
+    <a href="#data">Data</a>
+    <a href="#results">Results</a>
+    <a href="#physio">Ablation</a>
+    <a href="#validated">Validation</a>
+    <a href="#replay">Replay Demo</a>
+    <a href="#live">Live Demo</a>
+    <a href="#takeaway">Takeaway</a>
+    <a href="#resources">Resources</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow-badge">IEEE SENSORS 2026 &middot; Live Demonstration &middot; Paper ID 8824</span>
+    <h1>Privacy-Preserving Driver-State Sensing Using a Low-Resolution Infrared Array</h1>
+    <p class="sub">
+      A thermal sensor with just 64 pixels can tell whether a driver is alert or fatigued
+      &mdash; without ever recording an image a human could recognise. 
+    </p>
+    <p class="byline">
+      <strong>Tajim Md. Niamat Ullah Akhund</strong> &middot; <strong>Yojiro Mori</strong><br>
+      Information and Communications Laboratory, Toyota Technological Institute, Nagoya, Japan
+    </p>
+  </div>
+</header>
+
+<section id="why">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Why not just use a camera?</h2>
+      <p>
+        A camera records a face people can be identified by. This project asks whether a
+        sensor that physically cannot form that image can still tell if a driver is
+        alert or fatigued &mdash; and backed by ~2,000&nbsp;km of real driving, the answer
+        is yes.
+      </p>
+    </div>
+
+    <div class="compare-fig">
+      <div class="compare-card">
+        <h4>A camera</h4>
+        <div class="cam-visual">
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="38" stroke="#3A4A63" stroke-width="4"/>
+            <circle cx="37" cy="44" r="4.5" fill="#3A4A63"/>
+            <circle cx="63" cy="44" r="4.5" fill="#3A4A63"/>
+            <path d="M34 64 Q50 76 66 64" stroke="#3A4A63" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="id-tag bad">Identifiable</span>
+      </div>
+      <div class="compare-card">
+        <h4>This sensor &mdash; 64 pixels, full resolution</h4>
+        <div class="therm-visual">
+          <div style="background:#2c5f8a;"></div>
+            <div style="background:#678cab;"></div>
+            <div style="background:#6288a8;"></div>
+            <div style="background:#87a4bd;"></div>
+            <div style="background:#6086a7;"></div>
+            <div style="background:#2c5f8a;"></div>
+            <div style="background:#386891;"></div>
+            <div style="background:#2c5f8a;"></div>
+            <div style="background:#7899b5;"></div>
+            <div style="background:#89a6bf;"></div>
+            <div style="background:#c5d3e0;"></div>
+            <div style="background:#b0c3d4;"></div>
+            <div style="background:#c0cfdd;"></div>
+            <div style="background:#82a0ba;"></div>
+            <div style="background:#376890;"></div>
+            <div style="background:#386891;"></div>
+            <div style="background:#c8d6e2;"></div>
+            <div style="background:#e4eaf1;"></div>
+            <div style="background:#ecf1f6;"></div>
+            <div style="background:#efdfd9;"></div>
+            <div style="background:#e0e8ef;"></div>
+            <div style="background:#d3dee8;"></div>
+            <div style="background:#809fb9;"></div>
+            <div style="background:#2c5f8a;"></div>
+            <div style="background:#d0dbe6;"></div>
+            <div style="background:#eac7b7;"></div>
+            <div style="background:#e7b69d;"></div>
+            <div style="background:#eac3b0;"></div>
+            <div style="background:#ebc7b7;"></div>
+            <div style="background:#dde5ee;"></div>
+            <div style="background:#bbccdb;"></div>
+            <div style="background:#5b83a4;"></div>
+            <div style="background:#f2eeef;"></div>
+            <div style="background:#ebc9b9;"></div>
+            <div style="background:#dd7b48;"></div>
+            <div style="background:#de8254;"></div>
+            <div style="background:#eac7b6;"></div>
+            <div style="background:#f0e3df;"></div>
+            <div style="background:#a9bed0;"></div>
+            <div style="background:#809fb9;"></div>
+            <div style="background:#d4dfe9;"></div>
+            <div style="background:#e9beaa;"></div>
+            <div style="background:#e4a281;"></div>
+            <div style="background:#de8253;"></div>
+            <div style="background:#e9bda8;"></div>
+            <div style="background:#e3eaf1;"></div>
+            <div style="background:#bcccdb;"></div>
+            <div style="background:#5981a3;"></div>
+            <div style="background:#ccd9e4;"></div>
+            <div style="background:#eff3f8;"></div>
+            <div style="background:#e9c2ae;"></div>
+            <div style="background:#ecd0c3;"></div>
+            <div style="background:#eccfc2;"></div>
+            <div style="background:#d9e2eb;"></div>
+            <div style="background:#7f9eb9;"></div>
+            <div style="background:#5d84a6;"></div>
+            <div style="background:#b3c5d6;"></div>
+            <div style="background:#cad7e3;"></div>
+            <div style="background:#cedae5;"></div>
+            <div style="background:#f3f5f8;"></div>
+            <div style="background:#c5d3e0;"></div>
+            <div style="background:#bdcddc;"></div>
+            <div style="background:#6e91af;"></div>
+            <div style="background:#2c5f8a;"></div>
+        </div>
+        <span class="id-tag good">Not identifiable</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="step-no">1</span>How it works</h2>
+      <p>The hardware is deliberately simple: one low-resolution thermal sensor, one button, two LEDs, and a small logging computer.</p>
+      <figure>
+          <img src="fig/f2.2.jpg" alt="System flow (A) and sensor wiring (B)" class="real-media">
+          <figcaption>How a single button press becomes a logged, labelled thermal frame.</figcaption>
+      </figure>
+      <p>
+          An <strong>AMG8833</strong> infrared array sits on the dashboard facing the
+          driver. It has just 64 thermopiles arranged in an 8&times;8 grid &mdash; coarse
+          enough that no recognisable face is ever formed, at roughly 14&nbsp;cm per pixel
+          from a driver's typical seating distance. Alongside the grid, the sensor also
+          reports a single reference temperature from its own thermistor, reflecting the
+          cabin generally rather than any one body part.
+        </p>
+        <p>
+          A single push button lets the driver self-report their own state with one
+          short press: a green LED and label&nbsp;0 for alert, a red LED and label&nbsp;1
+          for fatigued. A Raspberry&nbsp;Pi reads the sensor at 8&nbsp;Hz and logs the
+          timestamp, the reference temperature, all 64 pixel values, and the current
+          label to a CSV file &mdash; no camera, no network connection, and no special
+          venue infrastructure required.
+        </p>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="step-no">2</span>Real-world data, not a simulator</h2>
+      <p>Every frame comes from ordinary driving &mdash; highways, narrow roads, and toll roads, by day and at night.</p>
+      <figure>
+          <img src="fig/f3.2.jpg" class="real-media">
+          <figcaption>Device on the dashboard, and the driver's view. Panel's face is masked for publication &mdash; the sensor itself never captures anything like it.</figcaption>
+        </figure>
+        <p>
+          Over one month of regular driving, the logger collected 612,075 usable thermal
+          frames across 40 separate drives, covering about 2,000&nbsp;km in total from a
+          single driver and vehicle.
+        </p>
+        <div>
+        
+        <div class="stat-row">
+          <div class="stat"><span class="num">612,075</span><span class="lbl">usable frames</span></div>
+          <div class="stat"><span class="num">40</span><span class="lbl">real drives</span></div>
+          <div class="stat"><span class="num">~2,000 km</span><span class="lbl">of driving</span></div>
+        </div>
+
+        <a href="vnc://CONFIGURE-THIS-ADDRESS" class="vnc-btn">
+          <span class="dot"></span> Open live VNC view of collected data
+        </a>
+        <p class="vnc-caption">Connects to the laptop and shows, live, exactly what the sensor is logging right now.</p>
+      </div>
+    </div>
+
+    <div class="monitor-note">
+      <span class="m-icon">&#128250;</span>
+      <p>
+        A second small monitor stays on and connected to the
+        Raspberry&nbsp;Pi the whole time &mdash; showing the same coarse thermal pattern
+        being logged, visible continuously. There is no step where
+        data collection happens out of sight: anyone glancing at that screen sees exactly
+        what the sensor sees, which is also exactly why this demo can show it to you live.
+      </p>
+    </div>
+
+    <h3 style="margin-top:46px;">Turning raw CSV files into watchable footage</h3>
+    <p>
+      Each drive is logged as a CSV of raw pixel values, not a video &mdash; so to see
+      what was actually collected, a small pipeline reconstructs each frame as a thermal
+      image and finds the continuous stretches.
+    </p>
+    <div class="script-card">
+      <div class="fname">We made thermal videos from the collected csv data.</div>
+      <p>
+        Our program scans every drive CSV and finds the single longest continuous run of each
+        self-reported state (alert / tired). Where that run is longer than a few minutes,
+        it renders the run as a thermal video with a temperature colour scale.
+      </p>
+    </div>
+
+    <h3 style="margin-top:36px;">What the collected data actually looks like</h3>
+    <p>
+      These three clips are drawn directly from that pipeline's output &mdash; real thermal
+      footage, each one a single uninterrupted stretch of one self-reported state.
+    </p>
+    <div class="video-grid">
+      <figure>
+        <video class="placeholder-video" controls poster="" aria-label="Placeholder for alert-state thermal video">
+          <source src="videos/20260504223933_status_0.mp4" type="video/mp4">
+        </video>
+        <figcaption><span class="ph-name">20260504223933_status_0.mp4</span><br>Alert &mdash; A representative drive continuous video with status 0 (Alert) from the real 40 drives collected data, we made it 3 times faster than recorded.</figcaption>
+      </figure>
+      <figure>
+        <video class="placeholder-video" controls poster="" aria-label="Placeholder for tired-state thermal video">
+          <source src="videos/20260501222446_status_1.mp4" type="video/mp4">
+        </video>
+        <figcaption><span class="ph-name">20260501222446_status_1.mp4</span><br>Tired &mdash; A representative drive continuous video with status 1 (Tired) from the real 40 drives collected data, we made it 3 times faster than recorded.</figcaption>
+      </figure>
+    </div>
+    <p>These two representative clips show only a small portion of the 40 real-world drives; no obvious difference between alert and fatigued states is expected to be visually discernible, but the machine-learning model can identify subtle patterns within the thermal data.</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="step-no">3</span>Eleven models, one clear winner</h2>
+      <p>Frames 0.125&nbsp;s apart are nearly identical, so evaluation has to respect whole drives, not individual frames.</p>
+    </div>
+    <p>
+      An ordinary random split would scatter near-duplicate frames across both training
+      and test data and quietly inflate the reported accuracy. Instead, whole drives are
+      grouped into five cross-validation folds &mdash; an entire drive is always held out
+      together, never split across train and test.
+    </p>
+    <div class="cols-2">
+      <div class="figure-col">
+        <figure>
+          <img src="fig/metrics_heatmap.png" alt="System flow (A) and sensor wiring (B)" class="real-media">
+          <figcaption>Out-of-fold metrics for the strongest classifiers. Histogram Gradient Boosting (HGB) leads on every metric.</figcaption>
+        </figure>
+      </div>
+      <div>
+        <p>
+          Histogram Gradient Boosting gave the best out-of-fold performance,
+          comfortably ahead of a majority-class baseline of 0.731 pooled accuracy.
+        </p>
+        <div class="stat-row">
+          <div class="stat"><span class="num">0.913</span><span class="lbl">accuracy</span></div>
+          <div class="stat"><span class="num">0.836</span><span class="lbl">F1</span></div>
+          <div class="stat"><span class="num">0.962</span><span class="lbl">AUC</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="physio">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="step-no">4</span>Is it really physiological?</h2>
+      <p>The strongest single cue is a confound worth ruling out: cabin temperature tracks time of day, not just the driver.</p>
+    </div>
+    <div class="cols-2">
+      <div>
+        <figure>
+          <img src="fig/shap_pixelgrid.png" class="real-media">
+          <figcaption>The reference temperature dominates every individual pixel.</figcaption>
+        </figure>
+      </div>
+      <div>
+        <figure>
+          <img src="fig/compare__HGB_roc.png" class="real-media">
+          <figcaption>Removing the reference temperature barely moves the curve.</figcaption>
+        </figure>
+      </div>
+    </div>
+    <p style="margin-top:28px;">
+      SHAP attribution identifies the sensor's reference temperature as the single
+      strongest cue &mdash; which raises a fair concern: is the model just tracking cabin
+      temperature? Subtracting that shared offset and keeping only the <em>relative</em>
+      thermal pattern still reaches 0.954&nbsp;AUC, close to the full set's 0.962. The
+      signal is not reducible to ambient temperature alone.
+    </p>
+  </div>
+</section>
+
+<section id="validated">
+  <div class="wrap">
+    <div class="section-head">
+      <h2><span class="step-no">5</span>Validated beyond a single number</h2>
+      <p>Pooling every frame together can flatter a model. Scoring drive-by-drive is a more honest test.</p>
+    </div>
+    <div class="cols-2">
+      <div>
+        <figure>
+          <img src="fig/item8_pooled_vs_macroAc.png" alt="System flow (A) and sensor wiring (B)" class="real-media">
+          <figcaption>Scored honestly per drive, accuracy is 0.849 (95% CI 0.762&ndash;0.925).</figcaption>
+        </figure>
+      </div>
+      <div>
+        <figure>
+          <img src="fig/item9_baseline_comparisonAc.png" alt="System flow (A) and sensor wiring (B)" class="real-media">
+          <figcaption>Baselines using only elapsed time or time-of-day score well below the full model.</figcaption>
+        </figure>
+      </div>
+    </div>
+    <p style="margin-top:28px;">
+      A model trained on only elapsed time or time-of-day &mdash; with no thermal input at
+      all &mdash; scores markedly lower under the identical protocol. That rules out the
+      simplest alternative explanation: the model is not simply learning what time of day
+      people tend to get tired.
+    </p>
+  </div>
+</section>
+
+<section id="replay" class="dark">
+  <div class="wrap">
+    <div class="section-head">
+  <h2>
+    <span class="step-no">6</span>
+    Seeing the trade-off, not just the numbers
+  </h2>
+
+  <p>
+    This is the heart of the live demo: replaying a real, previously unseen drive through the trained models to visualise the privacy&ndash;utility trade-off. The replay demonstration consists of two steps:
+  </p>
+
+  <ol style="color:#C9D3EE;">
+    <li style="margin-bottom:12px;">
+      <strong style="color:#fff;">Model training:</strong>
+      Four versions of the final model &mdash; thermistor-only, pixels-only,
+      relative-pixel, and full-feature &mdash; were trained on 39 of the 40 drives,
+      deliberately leaving one drive completely unseen. The replay video below uses
+      this held-out drive, which was never used for training.
+    </li>
+
+    <li>
+      <strong style="color:#fff;">Held-out drive replay:</strong>
+      The held-out drive is replayed through the trained models using a real
+      alert&rarr;tired transition, showing the driver's self-reported state,
+      the model's live prediction, and the outputs of all four feature sets
+      synchronised frame by frame.
+    </li>
+  </ol>
+</div>
+
+    <figure style="margin-top:32px;">
+      <video class="placeholder-video" controls poster="" aria-label="Placeholder for the replay classification demo video">
+        <source src="videos\replay_clip_v3.mp4" type="video/mp4">
+      </video>
+      <figcaption style="color:#AEBBD6;"><code style="color:#fff;">replay_clip.mp4</code> &mdash; the full replay classification demo, narrated below.</figcaption>
+    </figure>
+
+    <h3 style="color:#fff; margin-top:40px;">What's happening in this video</h3>
+    <p>
+      The drive being replayed is one the model was never trained on. As it plays, watch
+      two things move together: the driver's own self-reported label in the title, and
+      the model's live prediction just below the thermal image. When a real transition
+      happens &mdash; marked on screen &mdash; the prediction follows the driver's actual
+      report, not the other way around.
+    </p>
+    <p>
+      Then watch the four bars on the right. If the model only ever saw the single
+      thermistor number &mdash; no image at all &mdash; it still reaches 0.832&nbsp;AUC.
+      Raw pixels alone reach 0.876. But once the shared cabin-temperature offset is
+      removed and the model sees only the <em>relative</em> thermal pattern, it jumps to
+      0.954 &mdash; almost matching the full feature set's 0.962. The model is not reading
+      the room temperature; it is reading something physiological, from a sensor that
+      never sees a face.
+    </p>
+    <div class="chip-row">
+      <span class="chip">Thermistor only &middot; <b>0.832</b> AUC</span>
+      <span class="chip">Pixels only &middot; <b>0.876</b> AUC</span>
+      <span class="chip">Relative pixel &middot; <b>0.954</b> AUC</span>
+      <span class="chip">Full feature set &middot; <b>0.962</b> AUC</span>
+    </div>
+  </div>
+</section>
+
+<section id="live">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What you'll see at the demo table</h2>
+      <p>Two modes, side by side: one shows what the sensor records, the other shows what the model does with it.</p>
+    </div>
+    <div class="cols-2">
+      <div>
+        <h3>Live sensing</h3>
+        <p>
+          Watch your own 8&times;8 thermal pattern update in real time &mdash; the raw
+          grid, the thermistor reference, and the relative pattern . Nothing resembling a photograph is ever recorded, and you can see that
+          directly: there is simply no frame in which a face could appear.
+        </p>
+      </div>
+      <div>
+        <h3>Replay classification</h3>
+        <p>
+          A real recorded drive is replayed through the trained model, exactly as in the
+          video above &mdash; showing the driver's self-report alongside the model's live
+          prediction, and how confidence shifts across the four feature sets.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="takeaway" class="dark">
+  <div class="wrap">
+    <h2 style="justify-content:center; text-align:center; display:block;">Takeaway</h2>
+    <p style="max-width:68ch; margin:0 auto; text-align:center; font-size:18px;">
+      Coarse, low-resolution thermal sensing offers an inexpensive, less
+      identity-revealing alternative to cameras for continuous physiological monitoring
+      &mdash; in vehicles, and potentially in wearable and ambient health settings beyond
+      them. This is a single-driver feasibility study; broader validation across drivers
+      and vehicles is the natural next step.
+    </p>
+  </div>
+</section>
+
+<section id="resources">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Resources</h2>
+      <p>Everything needed to reproduce, extend, or check this work.</p>
+    </div>
+    <ul class="plain">
+      <li><strong>Dataset</strong> &mdash; available on IEEE Dataport. DOI: <a href="https://dx.doi.org/10.21227/pqh7-aj41">10.21227/pqh7-aj41</a></li>
+      <li><strong>Live demo paper</strong> &mdash; <em>Live Demonstration: Privacy-Preserving Driver-State Sensing Using a Low-Resolution Infrared Array</em>, IEEE SENSORS 2026, Paper ID 8824.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Tajim Md. Niamat Ullah Akhund &amp; Yojiro Mori &middot; Information and Communications Laboratory, Toyota Technological Institute &middot; IEEE SENSORS 2026
+  </div>
+</footer>
+
+
+</body>
+</html>
