@@ -430,7 +430,8 @@
     <span class="eyebrow-badge">IEEE SENSORS 2026 &middot; Live Demonstration &middot; Paper ID 8824</span>
     <h1>Privacy-Preserving Driver-State Sensing Using a Low-Resolution Infrared Array</h1>
     <p class="sub">
-      A thermal sensor with only 64 pixels can tell whether a driver is alert or tired, without recording an image where the person can be identified.
+      A thermal sensor with only 64 pixels can detect whether a driver is alert or fatigued
+      &mdash; without recording a recognisable image of the driver. 
     </p>
     <p class="byline">
       <strong>Tajim Md. Niamat Ullah Akhund</strong> &middot; <strong>Yojiro Mori</strong><br>
@@ -444,7 +445,9 @@
     <div class="section-head">
       <h2>Why not just use a camera?</h2>
       <p>
-        A camera records a person's face, so the person can be identified. We wanted to know if a sensor that cannot capture a clear face can still tell whether a driver is alert or tired. Our results from about 2,000 km of real driving show that it can.
+        A camera records a clear face that can identify a person. We asked a simple question:
+        can a sensor that cannot form a clear face still tell whether a driver is alert
+        or fatigued? Our results from about 2,000&nbsp;km of real driving show that it can.
       </p>
     </div>
 
@@ -539,26 +542,23 @@
   <div class="wrap">
     <div class="section-head">
       <h2><span class="step-no">1</span>How it works</h2>
-      <p>The hardware is deliberately simple: one low-resolution thermal sensor, one button, two LEDs, and a small logging computer.</p>
+      <p>The hardware is simple: one low-resolution thermal sensor, one button, two LEDs, and a small computer for recording the data.</p>
       <figure>
           <img src="fig/f2.2.jpg" alt="System flow (A) and sensor wiring (B)" class="real-media">
           <figcaption>How a single button press becomes a logged, labelled thermal frame.</figcaption>
       </figure>
       <p>
           An <strong>AMG8833</strong> infrared array sits on the dashboard facing the
-          driver. It has just 64 thermopiles arranged in an 8&times;8 grid &mdash; coarse
-          enough that no recognisable face is ever formed, at roughly 14&nbsp;cm per pixel
-          from a driver's typical seating distance. Alongside the grid, the sensor also
-          reports a single reference temperature from its own thermistor, reflecting the
-          cabin generally rather than any one body part.
+          driver. It has only 64 sensing points arranged in an 8&times;8 grid. The resolution is too low
+          to form a recognisable face, with each pixel covering roughly 14&nbsp;cm at a typical
+          driving distance. The sensor also reports one reference temperature from its
+          thermistor, which mainly reflects the overall cabin temperature.
         </p>
         <p>
-          A single push button lets the driver self-report their own state with one
-          short press: a green LED and label&nbsp;0 for alert, a red LED and label&nbsp;1
-          for fatigued. A Raspberry&nbsp;Pi reads the sensor at 8&nbsp;Hz and logs the
-          timestamp, the reference temperature, all 64 pixel values, and the current
-          label to a CSV file &mdash; no camera, no network connection, and no special
-          venue infrastructure required.
+          The driver reports the current state with one button press: green LED and label&nbsp;0
+          for alert, or red LED and label&nbsp;1 for fatigued. A Raspberry&nbsp;Pi reads the
+          sensor at 8&nbsp;Hz and saves the timestamp, reference temperature, all 64 pixel
+          values, and the current label to a CSV file. No camera or network connection is needed.
         </p>
     </div>
   </div>
@@ -606,23 +606,23 @@
 
     <h3 style="margin-top:46px;">Turning raw CSV files into watchable footage</h3>
     <p>
-      Each drive is logged as a CSV of raw pixel values, not a video &mdash; so to see
-      what was actually collected, a small pipeline reconstructs each frame as a thermal
-      image and finds the continuous stretches.
+      Each drive is saved as a CSV file containing raw temperature values, not as a video.
+      To make the data easier to view, our program converts the values into thermal images
+      and joins continuous sections into videos.
     </p>
     <div class="script-card">
       <div class="fname">We made thermal videos from the collected csv data.</div>
       <p>
-        Our program scans every drive CSV and finds the single longest continuous run of each
-        self-reported state (alert / tired). Where that run is longer than a few minutes,
-        it renders the run as a thermal video with a temperature colour scale.
+        Our program checks every drive CSV and finds the longest continuous period for each
+        self-reported state (alert or tired). If the period is long enough, the program
+        creates a thermal video with a temperature colour scale.
       </p>
     </div>
 
     <h3 style="margin-top:36px;">What the collected data actually looks like</h3>
     <p>
-      These three clips are drawn directly from that pipeline's output &mdash; real thermal
-      footage, each one a single uninterrupted stretch of one self-reported state.
+      These clips come directly from the collected data. Each clip shows one continuous
+      period of a self-reported state.
     </p>
     <div class="video-grid">
       <figure>
@@ -638,7 +638,7 @@
         <figcaption><span class="ph-name">20260501222446_status_1.mp4</span><br>Tired &mdash; A representative drive continuous video with status 1 (Tired) from the real 40 drives collected data, we made it 3 times faster than recorded.</figcaption>
       </figure>
     </div>
-    <p>These two representative clips show only a small portion of the 40 real-world drives; no obvious difference between alert and fatigued states is expected to be visually discernible, but the machine-learning model can identify subtle patterns within the thermal data.</p>
+    <p>These two example clips show only a small part of the 40 real-world drives. The alert and fatigued states may look similar to the human eye, but the machine-learning model can detect small patterns in the thermal data.</p>
   </div>
 </section>
 
@@ -646,13 +646,12 @@
   <div class="wrap">
     <div class="section-head">
       <h2><span class="step-no">3</span>Eleven models, one clear winner</h2>
-      <p>Frames 0.125&nbsp;s apart are nearly identical, so evaluation has to respect whole drives, not individual frames.</p>
+      <p>Frames only 0.125&nbsp;s apart are almost identical. So we evaluate the model by whole drives, not by mixing individual frames.</p>
     </div>
     <p>
-      An ordinary random split would scatter near-duplicate frames across both training
-      and test data and quietly inflate the reported accuracy. Instead, whole drives are
-      grouped into five cross-validation folds &mdash; an entire drive is always held out
-      together, never split across train and test.
+      A normal random split could put very similar frames in both the training and test sets,
+      which could make the accuracy look better than it really is. Instead, we use five-fold
+      cross-validation by whole drive. A drive is never split between training and testing.
     </p>
     <div class="cols-2">
       <div class="figure-col">
@@ -663,8 +662,8 @@
       </div>
       <div>
         <p>
-          Histogram Gradient Boosting gave the best out-of-fold performance,
-          comfortably ahead of a majority-class baseline of 0.731 pooled accuracy.
+          Histogram Gradient Boosting gave the best out-of-fold results and performed clearly
+          better than the majority-class baseline accuracy of 0.731.
         </p>
         <div class="stat-row">
           <div class="stat"><span class="num">0.913</span><span class="lbl">accuracy</span></div>
@@ -680,7 +679,7 @@
   <div class="wrap">
     <div class="section-head">
       <h2><span class="step-no">4</span>Is it really physiological?</h2>
-      <p>The strongest single cue is a confound worth ruling out: cabin temperature tracks time of day, not just the driver.</p>
+      <p>The reference temperature is the strongest single feature, so we checked whether the model was simply learning the cabin temperature.</p>
     </div>
     <div class="cols-2">
       <div>
@@ -697,11 +696,11 @@
       </div>
     </div>
     <p style="margin-top:28px;">
-      SHAP attribution identifies the sensor's reference temperature as the single
-      strongest cue &mdash; which raises a fair concern: is the model just tracking cabin
-      temperature? Subtracting that shared offset and keeping only the <em>relative</em>
-      thermal pattern still reaches 0.954&nbsp;AUC, close to the full set's 0.962. The
-      signal is not reducible to ambient temperature alone.
+      SHAP shows that the sensor's reference temperature is the strongest single feature.
+      This raises an important question: is the model only learning the cabin temperature?
+      After removing this common temperature level and using only the <em>relative</em>
+      thermal pattern, the model still reaches 0.954&nbsp;AUC, close to 0.962 with all features.
+      This shows that cabin temperature alone does not explain the result.
     </p>
   </div>
 </section>
@@ -710,7 +709,7 @@
   <div class="wrap">
     <div class="section-head">
       <h2><span class="step-no">5</span>Validated beyond a single number</h2>
-      <p>Pooling every frame together can flatter a model. Scoring drive-by-drive is a more honest test.</p>
+      <p>Combining all frames can make the model look better than it is. Testing each drive separately gives a more realistic result.</p>
     </div>
     <div class="cols-2">
       <div>
@@ -727,10 +726,9 @@
       </div>
     </div>
     <p style="margin-top:28px;">
-      A model trained on only elapsed time or time-of-day &mdash; with no thermal input at
-      all &mdash; scores markedly lower under the identical protocol. That rules out the
-      simplest alternative explanation: the model is not simply learning what time of day
-      people tend to get tired.
+      Models that use only elapsed time or time of day, with no thermal data, perform much
+      worse under the same test. This shows that the full model is not simply learning
+      when fatigue is more likely to occur during the day.
     </p>
   </div>
 </section>
@@ -744,24 +742,22 @@
   </h2>
 
   <p>
-    This is the heart of the live demo: replaying a real, previously unseen drive through the trained models to visualise the privacy&ndash;utility trade-off. The replay demonstration consists of two steps:
+    This is the main part of the live demo. We replay a real drive that the models did not see during training and show how much useful information can be obtained while keeping the image low-resolution. The replay has two steps:
   </p>
 
   <ol style="color:#C9D3EE;">
     <li style="margin-bottom:12px;">
       <strong style="color:#fff;">Model training:</strong>
-      Four versions of the final model &mdash; thermistor-only, pixels-only,
-      relative-pixel, and full-feature &mdash; were trained on 39 of the 40 drives,
-      deliberately leaving one drive completely unseen. The replay video below uses
-      this held-out drive, which was never used for training.
+      We trained four versions of the final model &mdash; thermistor-only, pixels-only,
+      relative-pixel, and full-feature &mdash; using 39 of the 40 drives. One full drive
+      was left out and was not used for training. The replay video below uses this unseen drive.
     </li>
 
     <li>
       <strong style="color:#fff;">Held-out drive replay:</strong>
-      The held-out drive is replayed through the trained models using a real
-      alert&rarr;tired transition, showing the driver's self-reported state,
-      the model's live prediction, and the outputs of all four feature sets
-      synchronised frame by frame.
+      We replay the held-out drive through the trained models around a real
+      alert&rarr;tired transition. The video shows the driver's self-reported state,
+      the model's live prediction, and the results from all four feature sets at the same time.
     </li>
   </ol>
 </div>
@@ -770,25 +766,21 @@
       <video class="placeholder-video" controls poster="" aria-label="Placeholder for the replay classification demo video">
         <source src="videos\replay_clip_v3_shorten.mp4" type="video/mp4">
       </video>
-      <figcaption style="color:#AEBBD6;"><code style="color:#fff;">Replay Clip:</code> &mdash; A representative segment of the full replay classification demo, shown at 3× the original playback speed for brevity. The explanation is narrated below.</figcaption>
+      <figcaption style="color:#AEBBD6;"><code style="color:#fff;">Replay Clip:</code> &mdash; A short part of the full replay classification demo, shown at 3× the original speed. The video is explained below.</figcaption>
     </figure>
 
     <h3 style="color:#fff; margin-top:40px;">What's happening in this video</h3>
     <p>
-      The drive being replayed is one the model was never trained on. As it plays, watch
-      two things move together: the driver's own self-reported label in the title, and
-      the model's live prediction just below the thermal image. When a real transition
-      happens &mdash; marked on screen &mdash; the prediction follows the driver's actual
-      report, not the other way around.
+      The model was never trained on the drive shown in this replay. Watch the driver's
+      self-reported label in the title and the model's prediction below the thermal image.
+      When the real state changes, the transition is marked on the screen so you can compare
+      the self-reported state with the model prediction.
     </p>
     <p>
-      Then watch the four bars on the right. If the model only ever saw the single
-      thermistor number &mdash; no image at all &mdash; it still reaches 0.832&nbsp;AUC.
-      Raw pixels alone reach 0.876. But once the shared cabin-temperature offset is
-      removed and the model sees only the <em>relative</em> thermal pattern, it jumps to
-      0.954 &mdash; almost matching the full feature set's 0.962. The model is not reading
-      the room temperature; it is reading something physiological, from a sensor that
-      never sees a face.
+      Now look at the four bars on the right. The thermistor-only model reaches
+      0.832&nbsp;AUC, while the pixels-only model reaches 0.876. After removing the common
+      cabin-temperature level, the relative-pixel model reaches 0.954, close to the full
+      feature set at 0.962. This means the result is not explained by cabin temperature alone.
     </p>
     <div class="chip-row">
       <span class="chip">Thermistor only &middot; <b>0.832</b> AUC</span>
@@ -803,23 +795,23 @@
   <div class="wrap">
     <div class="section-head">
       <h2>What you'll see at the demo table</h2>
-      <p>Two modes, side by side: one shows what the sensor records, the other shows what the model does with it.</p>
+      <p>The demo has two parts: one shows what the sensor records, and the other shows how the model uses the data.</p>
     </div>
     <div class="cols-2">
       <div>
         <h3>Live sensing</h3>
         <p>
-          Watch your own 8&times;8 thermal pattern update in real time &mdash; the raw
-          grid, the thermistor reference, and the relative pattern . Nothing resembling a photograph is ever recorded, and you can see that
-          directly: there is simply no frame in which a face could appear.
+          Watch the 8&times;8 thermal pattern update in real time. You can see the raw grid,
+          the thermistor reference, and the relative thermal pattern. The sensor does not
+          record a photograph or produce a recognisable face.
         </p>
       </div>
       <div>
         <h3>Replay classification</h3>
         <p>
-          A real recorded drive is replayed through the trained model, exactly as in the
-          video above &mdash; showing the driver's self-report alongside the model's live
-          prediction, and how confidence shifts across the four feature sets.
+          A real recorded drive is replayed through the trained models, as shown in the video above.
+          You can compare the driver's self-reported state with the model's live prediction
+          and the results from the four feature sets.
         </p>
       </div>
     </div>
@@ -830,11 +822,10 @@
   <div class="wrap">
     <h2 style="justify-content:center; text-align:center; display:block;">Takeaway</h2>
     <p style="max-width:68ch; margin:0 auto; text-align:center; font-size:18px;">
-      Coarse, low-resolution thermal sensing offers an inexpensive, less
-      identity-revealing alternative to cameras for continuous physiological monitoring
-      &mdash; in vehicles, and potentially in wearable and ambient health settings beyond
-      them. This is a single-driver feasibility study; broader validation across drivers
-      and vehicles is the natural next step.
+      Low-resolution thermal sensing can provide useful information without recording a clear
+      image of a person. It may offer a low-cost alternative to cameras for continuous
+      monitoring in vehicles and other sensing applications. This study used one driver,
+      so the next step is to test the method with more drivers and vehicles.
     </p>
   </div>
 </section>
@@ -843,7 +834,7 @@
   <div class="wrap">
     <div class="section-head">
       <h2>Resources</h2>
-      <p>Everything needed to reproduce, extend, or check this work.</p>
+      <p>Links to the dataset and live demo paper are provided below.</p>
     </div>
     <ul class="plain">
       <li><strong>Dataset</strong> &mdash; available on IEEE Dataport. DOI: <a href="https://dx.doi.org/10.21227/pqh7-aj41">10.21227/pqh7-aj41</a></li>
