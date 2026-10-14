@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy-Preserving Driver-State Sensing — Low-Resolution Infrared Array (one-page vertical display)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ------------------------------------------------------------------
+     ONE fixed page of 1080 x 1920 (a 46-inch portrait monitor), scaled to
+     whatever window it is shown in. Nothing scrolls: the pictures (--k)
+     and, only a little, the text (--fs) are fitted to the page height by
+     the script at the bottom, so there is no empty space and nothing is
+     cut off.
+     ------------------------------------------------------------------ */
+  :root {
+    --navy:#0B1830; --blue:#2C5F8A; --frost:#F3F6FA; --paper:#fff;
+    --ember:#D9672C; --ink:#1A2233; --muted:#5B6B82; --line:#DCE3EC;
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#050B18;
+    font-family:"IBM Plex Sans", Arial, sans-serif; color:var(--ink); }
+  .viewport { position:fixed; inset:0; }
+  .deck { position:absolute; left:50%; top:50%; width:1080px; height:1920px;
+          margin:-960px 0 0 -540px; transform-origin:50% 50%; }
+
+  .page { position:absolute; inset:0; background:var(--frost); display:flex; flex-direction:column;
+          padding:10px 12px; --k:1; --fs:1; }
+  .solo, .split, .mrow { --mk: calc(1 - (1 - var(--k)) * var(--wt, 1)); }   /* picture scale; --wt < 1 shrinks less */
+  .stack { flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; justify-content:space-between; }
+  .stack > * { flex:none; }
+  .row { display:grid; gap:8px; }
+
+  h1, h2, h3, h4, .num { font-family:"Space Grotesk","IBM Plex Sans",Arial,sans-serif; letter-spacing:-.01em; }
+  code { font-family:"IBM Plex Mono", Consolas, monospace; }
+
+  /* ---------- hero ---------- */
+  .hero { position:relative; overflow:hidden; background:var(--navy); color:#fff; border-radius:12px;
+          padding:calc(12px*var(--fs)) 20px calc(13px*var(--fs)); }
+  .hero::before { content:""; position:absolute; inset:-30%;
+    background: radial-gradient(circle at 22% 30%, rgba(217,103,44,.5), transparent 42%),
+                radial-gradient(circle at 78% 65%, rgba(44,95,138,.65), transparent 46%),
+                radial-gradient(circle at 90% 10%, rgba(242,167,75,.3), transparent 38%);
+    filter:blur(30px); }
+  .hero > * { position:relative; }
+  .badge { display:inline-block; font-size:calc(15px*var(--fs)); color:#C9D3EE; background:rgba(255,255,255,.08);
+           border:1px solid rgba(255,255,255,.22); padding:2px 12px; border-radius:99px; }
+  .hero h1 { margin:calc(6px*var(--fs)) 0; color:#fff; font-weight:600; font-size:calc(38px*var(--fs)); line-height:1.08; }
+  .sub { margin:0 0 calc(5px*var(--fs)); color:#D6DEEF; font-size:calc(20px*var(--fs)); line-height:1.3; }
+  .byline { margin:0; color:#AEBBD6; font-size:calc(15px*var(--fs)); line-height:1.3; }
+  .byline strong { color:#fff; }
+
+  /* ---------- cards ---------- */
+  .card { display:flex; flex-direction:column; background:var(--paper); border:1px solid var(--line);
+          border-radius:12px; padding:calc(8px*var(--fs)) 13px calc(10px*var(--fs)); min-width:0; }
+  .card h2 { display:flex; align-items:center; margin:0 0 calc(6px*var(--fs)); color:var(--navy);
+             font-weight:600; font-size:calc(25px*var(--fs)); line-height:1.1; }
+  .card h3 { margin:0 0 calc(3px*var(--fs)); font-weight:600; font-size:calc(19px*var(--fs)); color:var(--navy); }
+  .step { flex:none; width:calc(29px*var(--fs)); height:calc(29px*var(--fs)); border-radius:50%; background:var(--navy);
+          color:#fff; margin-right:9px; font-size:calc(15px*var(--fs)); display:inline-flex; align-items:center; justify-content:center; }
+  .card.dark { background:var(--navy); border-color:var(--navy); color:#C9D3EE; }
+  .card.dark h2, .card.dark h3 { color:#fff; }
+  .card.dark .step { background:var(--ember); }
+  .body { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; }
+
+  ul.pts { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:calc(5px*var(--fs)); }
+  ul.pts li { position:relative; padding-left:19px; font-size:calc(21px*var(--fs)); line-height:1.26; }
+  ul.pts li::before { content:""; position:absolute; left:1px; top:.52em; width:8px; height:8px; border-radius:50%; background:var(--ember); }
+  ul.pts.fill { align-self:stretch; justify-content:center; gap:calc(10px*var(--fs)); }
+  .card.dark ul.pts li { color:#DDE5F5; }
+  .colc { align-self:stretch; display:flex; flex-direction:column; justify-content:center; min-width:0; }
+
+  /* ---------- pictures / videos (scaled by --k) ---------- */
+  figure { margin:0; min-width:0; }
+  figure img, figure video { display:block; width:100%; height:auto; aspect-ratio:var(--ar); object-fit:contain;
+        border-radius:8px; border:1px solid var(--line); background:#fff; }
+  figcaption { margin-top:3px; color:var(--muted); font-size:calc(14.5px*var(--fs)); line-height:1.22; }
+  .card.dark figcaption { color:#AEBBD6; }
+  .solo { width:calc(100% * var(--mk)); margin:0 auto; }
+  .mrow { display:flex; gap:10px; align-items:flex-start; width:calc(100% * var(--mk)); margin:0 auto; }
+  .mrow > figure { flex:var(--ar) 1 0; }
+  .split { display:grid; gap:12px; align-items:center; }
+  .split.top { align-items:start; }
+
+  /* ---------- camera vs sensor (built in HTML) ---------- */
+  .compare-fig { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .compare-card { background:var(--frost); border:1px solid var(--line); border-radius:10px; padding:6px; text-align:center; }
+  .compare-card h4 { margin:0 0 4px; font-weight:600; font-size:calc(14px*var(--fs)); line-height:1.15; color:var(--ink); }
+  .cam-visual { aspect-ratio:1/1; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    background: repeating-linear-gradient(0deg,#cfd6e0 0 3px,#c3cbd8 3px 6px),
+                repeating-linear-gradient(90deg,#cfd6e0 0 3px,#c3cbd8 3px 6px); background-blend-mode:multiply; }
+  .cam-visual svg { width:46%; height:46%; opacity:.88; }
+  .therm-visual { aspect-ratio:1/1; border-radius:6px; overflow:hidden; display:grid;
+                  grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); }
+  .id-tag { display:inline-block; margin-top:4px; font-size:calc(13px*var(--fs)); font-weight:600; padding:1px 9px; border-radius:99px; }
+  .id-tag.bad { background:#FBE6E0; color:#B8451F; }
+  .id-tag.good { background:#E3F0E6; color:#2F7A41; }
+
+  /* ---------- numbers, chips, links ---------- */
+  .stat-col { display:flex; flex-direction:column; gap:calc(2px*var(--fs)); margin-bottom:calc(6px*var(--fs)); }
+  .stat-row { display:flex; gap:6px; margin-bottom:calc(6px*var(--fs)); }
+  .stat { display:flex; align-items:baseline; gap:8px; }
+  .stat-row .stat { flex-direction:column; align-items:center; gap:0; flex:1; text-align:center; }
+  .num { white-space:nowrap; color:var(--ember); font-weight:600; font-size:calc(26px*var(--fs)); line-height:1.1; }
+  .lbl { color:var(--muted); font-size:calc(14.5px*var(--fs)); }
+  .chips { display:grid; grid-template-columns:1fr; gap:calc(6px*var(--fs)); }
+  .chip { background:#fff; color:var(--ink); border-radius:9px; padding:calc(5px*var(--fs)) 10px; font-size:calc(15.5px*var(--fs));
+          display:flex; justify-content:space-between; gap:8px; white-space:nowrap; }
+  .chip b { color:var(--ember); }
+  .ph-name { font-family:"IBM Plex Mono", Consolas, monospace; font-size:.9em; background:#fff; border:1px solid var(--line);
+             border-radius:5px; padding:0 4px; color:var(--navy); }
+  ul.res { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:calc(11px*var(--fs)); }
+  ul.res li { font-size:calc(18.5px*var(--fs)); line-height:1.25; }
+  ul.res a { color:var(--blue); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="viewport"><div class="deck" id="deck">
+<main class="page" id="page">
+  <div class="stack">
+
+    <header class="hero">
+      <span class="badge">IEEE SENSORS 2026 &middot; Live Demonstration &middot; Paper ID 8824</span>
+      <h1>Privacy-Preserving Driver-State Sensing Using a Low-Resolution Infrared Array</h1>
+      <p class="sub">A 64-pixel thermal sensor can tell alert from fatigued &mdash; without ever recording a recognisable image.</p>
+      <p class="byline"><strong>Tajim Md. Niamat Ullah Akhund</strong> &middot; <strong>Yojiro Mori</strong> &mdash; Information and Communications Laboratory, Toyota Technological Institute, Nagoya, Japan</p>
+    </header>
+
+    <!-- why + how -->
+    <div class="row" style="grid-template-columns: 37fr 63fr;">
+      <section class="card" id="why">
+        <h2>Why not just use a camera?</h2>
+        <div class="body">
+          <div class="compare-fig" style="width:calc(100% * var(--mk)); margin:0 auto 6px; --wt:.8;">
+            <div class="compare-card">
+              <h4>A camera</h4>
+              <div class="cam-visual">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="50" r="38" stroke="#3A4A63" stroke-width="4"/>
+                  <circle cx="37" cy="44" r="4.5" fill="#3A4A63"/>
+                  <circle cx="63" cy="44" r="4.5" fill="#3A4A63"/>
+                  <path d="M34 64 Q50 76 66 64" stroke="#3A4A63" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span class="id-tag bad">Identifiable</span>
+            </div>
+            <div class="compare-card">
+              <h4>This sensor &mdash; 64 pixels</h4>
+              <div class="therm-visual">
+                <div style="background:#2c5f8a;"></div><div style="background:#678cab;"></div><div style="background:#6288a8;"></div><div style="background:#87a4bd;"></div><div style="background:#6086a7;"></div><div style="background:#2c5f8a;"></div><div style="background:#386891;"></div><div style="background:#2c5f8a;"></div>
+                <div style="background:#7899b5;"></div><div style="background:#89a6bf;"></div><div style="background:#c5d3e0;"></div><div style="background:#b0c3d4;"></div><div style="background:#c0cfdd;"></div><div style="background:#82a0ba;"></div><div style="background:#376890;"></div><div style="background:#386891;"></div>
+                <div style="background:#c8d6e2;"></div><div style="background:#e4eaf1;"></div><div style="background:#ecf1f6;"></div><div style="background:#efdfd9;"></div><div style="background:#e0e8ef;"></div><div style="background:#d3dee8;"></div><div style="background:#809fb9;"></div><div style="background:#2c5f8a;"></div>
+                <div style="background:#d0dbe6;"></div><div style="background:#eac7b7;"></div><div style="background:#e7b69d;"></div><div style="background:#eac3b0;"></div><div style="background:#ebc7b7;"></div><div style="background:#dde5ee;"></div><div style="background:#bbccdb;"></div><div style="background:#5b83a4;"></div>
+                <div style="background:#f2eeef;"></div><div style="background:#ebc9b9;"></div><div style="background:#dd7b48;"></div><div style="background:#de8254;"></div><div style="background:#eac7b6;"></div><div style="background:#f0e3df;"></div><div style="background:#a9bed0;"></div><div style="background:#809fb9;"></div>
+                <div style="background:#d4dfe9;"></div><div style="background:#e9beaa;"></div><div style="background:#e4a281;"></div><div style="background:#de8253;"></div><div style="background:#e9bda8;"></div><div style="background:#e3eaf1;"></div><div style="background:#bcccdb;"></div><div style="background:#5981a3;"></div>
+                <div style="background:#ccd9e4;"></div><div style="background:#eff3f8;"></div><div style="background:#e9c2ae;"></div><div style="background:#ecd0c3;"></div><div style="background:#eccfc2;"></div><div style="background:#d9e2eb;"></div><div style="background:#7f9eb9;"></div><div style="background:#5d84a6;"></div>
+                <div style="background:#b3c5d6;"></div><div style="background:#cad7e3;"></div><div style="background:#cedae5;"></div><div style="background:#f3f5f8;"></div><div style="background:#c5d3e0;"></div><div style="background:#bdcddc;"></div><div style="background:#6e91af;"></div><div style="background:#2c5f8a;"></div>
+              </div>
+              <span class="id-tag good">Not identifiable</span>
+            </div>
+          </div>
+          <ul class="pts">
+            <li>A camera records a face that can identify a person.</li>
+            <li>A sensor with no clear face still tells alert from fatigued &mdash; ~2,000&nbsp;km of real driving shows it.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card" id="how">
+        <h2><span class="step">1</span>How it works</h2>
+        <div class="body">
+          <figure class="solo" style="--ar:2.8; --wt:.3">
+            <img src="fig/f2.2.jpg" alt="System flow (A) and sensor wiring (B)">
+          </figure>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>64 pixels, ~14&nbsp;cm each: too coarse for a face. A thermistor adds a reference temperature.</li>
+            <li>One button sets the label (green LED 0 alert, red LED 1 fatigued); a Raspberry&nbsp;Pi logs to CSV at 8&nbsp;Hz.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- data + clips -->
+    <div class="row" style="grid-template-columns: 50fr 50fr;">
+      <section class="card" id="data">
+        <h2><span class="step">2</span>Real-world data, not a simulator</h2>
+        <div class="body">
+          <figure style="--ar:1.274">
+              <img src="fig/f3.2.jpg" alt="Device on the dashboard, and the driver's view">
+              <figcaption>Device and driver's view; 612,075 usable frames from 40 real drives.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="card" id="clips">
+        <h2>From raw CSV to watchable footage</h2>
+        <div class="body">
+          <div class="mrow">
+            <figure style="--ar:1.225">
+              <video controls preload="metadata" aria-label="Alert-state thermal video"><source src="videos/20260504223933_status_0.mp4" type="video/mp4"></video>
+              <figcaption>Alert &middot; status 0 &middot; 3&times; speed &middot; <span class="ph-name">20260504223933</span></figcaption>
+            </figure>
+            <figure style="--ar:1.225">
+              <video controls preload="metadata" aria-label="Tired-state thermal video"><source src="videos/20260501222446_status_1.mp4" type="video/mp4"></video>
+              <figcaption>Tired &middot; status 1 &middot; 3&times; speed &middot; <span class="ph-name">20260501222446</span></figcaption>
+            </figure>
+          </div>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>Longest alert and tired periods of the 40 drives look alike to the eye; the model finds the small patterns.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- results + physio -->
+    <div class="row" style="grid-template-columns: 50fr 50fr;">
+      <section class="card" id="results">
+        <h2><span class="step">3</span>Eleven models, one clear winner</h2>
+        <div class="body">
+          <div class="split" style="grid-template-columns: calc(60% * var(--mk)) 1fr;">
+            <figure style="--ar:1.66">
+              <img src="fig/metrics_heatmap.png" alt="Out-of-fold metrics for the strongest classifiers">
+            </figure>
+            <div class="colc">
+              <div class="stat-col">
+                <div class="stat"><span class="num">0.913</span><span class="lbl">accuracy</span></div>
+                <div class="stat"><span class="num">0.836</span><span class="lbl">F1</span></div>
+                <div class="stat"><span class="num">0.962</span><span class="lbl">AUC</span></div>
+              </div>
+            </div>
+          </div>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>Five-fold CV by whole drive: frames 0.125&nbsp;s apart are near-identical.</li>
+            <li>HGB leads on every metric and beats the majority-class baseline.</li>
+          </ul>
+        </div>
+      </section>
+      <section class="card" id="physio">
+        <h2><span class="step">4</span>Is it really physiological?</h2>
+        <div class="body">
+          <div class="mrow">
+            <figure style="--ar:1.673">
+              <img src="fig/shap_pixelgrid.png" alt="SHAP contribution of each pixel of the 8x8 sensor">
+            </figure>
+            <figure style="--ar:1.429">
+              <img src="fig/compare__HGB_roc.png" alt="HGB ROC curves by feature pattern">
+            </figure>
+          </div>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>SHAP: the reference temperature dominates &mdash; is it just cabin temperature?</li>
+            <li>Relative pixels alone still reach 0.954&nbsp;AUC (full set 0.962): no.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- validated + replay -->
+    <div class="row" style="grid-template-columns: 40fr 60fr;">
+      <section class="card" id="validated">
+        <h2><span class="step">5</span>Validated beyond a single number</h2>
+        <div class="body">
+          <div class="mrow">
+            <figure style="--ar:1.067">
+              <img src="fig/item8_pooled_vs_macroAc.png" alt="Pooled versus macro-averaged accuracy">
+            </figure>
+            <figure style="--ar:1.357">
+              <img src="fig/item9_baseline_comparisonAc.png" alt="Full model compared with time-only baselines">
+            </figure>
+          </div>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>Per drive: accuracy 0.849 (95% CI 0.762&ndash;0.925).</li>
+            <li>Time-only models (no thermal input) score far lower.</li>
+          </ul>
+        </div>
+      </section>
+      <section class="card dark" id="replay">
+        <h2><span class="step">6</span>Seeing the trade-off, not just the numbers</h2>
+        <div class="body">
+          <figure style="--ar:2.115">
+              <video controls preload="metadata" aria-label="Replay classification demo video"><source src="videos\replay_clip_v3_cut25mb.mp4" type="video/mp4"></video>
+              <figcaption><code style="color:#fff;">Replay clip</code> &middot; 3&times; speed</figcaption>
+          </figure>
+          <ul class="pts" style="margin-top:calc(6px*var(--fs));">
+            <li>Trained on 39 of the 40 drives; the replayed drive was held out.</li>
+            <li>Relative pixels get close to the full set &mdash; reference temperature does not explain the result.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- demo table + takeaway + resources -->
+    <div class="row" style="grid-template-columns: 36fr 31fr 33fr;">
+      <section class="card" id="live">
+        <h2>At the demo table</h2>
+        <div class="body">
+          <h3>Live sensing</h3>
+          <ul class="pts"><li>Your own 8&times;8 thermal pattern, in real time &mdash; no photograph, no face.</li></ul>
+          <h3 style="margin-top:calc(6px*var(--fs));">Replay classification</h3>
+          <ul class="pts"><li>A real drive through the trained models: self-report vs prediction.</li></ul>
+        </div>
+      </section>
+      <section class="card dark" id="takeaway">
+        <h2>Takeaway</h2>
+        <div class="body">
+          <ul class="pts">
+            <li>Low-resolution thermal sensing gives driver-state information without a clear image of the driver.</li>
+            <li>Single-driver study; next: more drivers and vehicles.</li>
+          </ul>
+        </div>
+      </section>
+      <section class="card" id="resources">
+        <h2>Resources</h2>
+        <div class="body">
+          <ul class="res">
+            <li><strong>Dataset</strong> &middot; IEEE Dataport <a href="https://dx.doi.org/10.21227/pqh7-aj41">10.21227/pqh7-aj41</a></li>
+            <li><strong>Live demo paper</strong> &middot; IEEE SENSORS 2026, Paper ID 8824</li>
+            <li><strong>Demo Presentation Video</strong> <a href="https://drive.google.com/file/d/1C7ToEGnZ-ksmU94E0RuHTmcdDPaBFwVI/view?usp=drive_link" target="_blank" rel="noopener noreferrer">Link</a></li>
+            <li><strong>Poster</strong> <a href="https://drive.google.com/drive/folders/1VPW8vEtMsqIBcZrP3Nk-JwCIczMR1GHY?usp=drive_link" target="_blank" rel="noopener noreferrer">Link</a></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</main>
+</div></div>
+
+<script>
+(function () {
+  const deck = document.getElementById('deck');
+  const page = document.getElementById('page');
+
+  /* ---- scale the 1080 x 1920 page to the window (letterboxed if the window is not 9:16) ---- */
+  function scaleDeck() {
+    deck.style.transform = 'scale(' + Math.min(window.innerWidth / 1080, window.innerHeight / 1920) + ')';
+  }
+
+  /* ---- fit: shrink the pictures (--k) first and the text (--fs) only a little; if there is room to
+          spare, grow the text instead of leaving a gap ---- */
+  const FS_MIN = 0.86, FS_MAX = 1.25, S_MIN = 0.40;
+  function apply(s) {
+    const t = Math.max(0, Math.min(1, (s - 0.55) / 0.45));
+    page.style.setProperty('--k', s.toFixed(4));
+    page.style.setProperty('--fs', (FS_MIN + (1 - FS_MIN) * t).toFixed(4));
+  }
+  function natural() {
+    const st = page.querySelector('.stack');
+    const gap = parseFloat(getComputedStyle(st).rowGap) || 0;
+    let h = 0, n = 0;
+    for (const c of st.children) { h += c.offsetHeight; n++; }
+    return h + gap * (n - 1);
+  }
+  function fit() {
+    const avail = page.querySelector('.stack').clientHeight - 2;
+    apply(1);
+    if (natural() <= avail) {
+      let lo = 1, hi = FS_MAX;
+      for (let i = 0; i < 14; i++) {
+        const mid = (lo + hi) / 2; page.style.setProperty('--fs', mid.toFixed(4));
+        if (natural() <= avail) lo = mid; else hi = mid;
+      }
+      page.style.setProperty('--fs', lo.toFixed(4)); page.dataset.fit = '1.000 fs' + lo.toFixed(3); return;
+    }
+    let lo = S_MIN, hi = 1;
+    for (let i = 0; i < 16; i++) {
+      const mid = (lo + hi) / 2; apply(mid);
+      if (natural() <= avail) lo = mid; else hi = mid;
+    }
+    apply(lo); page.dataset.fit = lo.toFixed(3);
+  }
+  let queued = false;
+  function fitSoon() { if (queued) return; queued = true; requestAnimationFrame(function () { queued = false; fit(); }); }
+
+  /* ---- use the real size of every picture / video once it is known ---- */
+  document.querySelectorAll('figure[style*="--ar"]').forEach(function (fig) {
+    const img = fig.querySelector('img'), vid = fig.querySelector('video');
+    function set(w, h) { if (w && h) { fig.style.setProperty('--ar', (w / h).toFixed(4)); fitSoon(); } }
+    if (img) {
+      if (img.complete && img.naturalWidth) set(img.naturalWidth, img.naturalHeight);
+      img.addEventListener('load', function () { set(img.naturalWidth, img.naturalHeight); });
+    }
+    if (vid) vid.addEventListener('loadedmetadata', function () { set(vid.videoWidth, vid.videoHeight); });
+  });
+
+  window.addEventListener('resize', scaleDeck);
+  window.addEventListener('load', fitSoon);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
+  scaleDeck(); fitSoon();
+})();
+</script>
+</body>
+</html>
